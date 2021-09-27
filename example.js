@@ -7,10 +7,16 @@ const updateNotifier = require('.');
 // This is because it never reports updates on the first run
 // If you want to test your own usage, ensure you set an older version
 
-updateNotifier({
+const u = updateNotifier({
 	pkg: {
-		name: 'public-ip',
+		name: 'webpack',
 		version: '0.9.2'
 	},
 	updateCheckInterval: 0
-}).notify();
+})
+
+// u.notify();
+
+u.fetchInfo().then(res => {
+  console.log(res);
+})

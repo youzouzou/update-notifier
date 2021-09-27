@@ -40,6 +40,12 @@ class UpdateNotifier {
 		this.packageName = options.pkg.name;
 		this.packageVersion = options.pkg.version;
 		this.updateCheckInterval = typeof options.updateCheckInterval === 'number' ? options.updateCheckInterval : ONE_DAY;
+    // process.env 属性返回包含用户环境的对象
+    // （1）node设置了NO_UPDATE_NOTIFIER环境变量；
+    // （2）node设置了NODE_ENV变量为test；
+    // （3）node运行参数里有--no-update-notifier；
+    // （4）运行环境为CI服务器（持续集成服务器）时。
+    // 以上4种情况，则不配置config
 		this.disabled = 'NO_UPDATE_NOTIFIER' in process.env ||
 			process.env.NODE_ENV === 'test' ||
 			process.argv.includes('--no-update-notifier') ||
@@ -95,6 +101,7 @@ class UpdateNotifier {
 			return;
 		}
 
+    // 翻译：开启子进程，并将options作为环境变量进行传递
 		// Spawn a detached process, passing the options as an environment property
 		spawn(process.execPath, [path.join(__dirname, 'check.js'), JSON.stringify(this.options)], {
 			detached: true,
@@ -102,6 +109,7 @@ class UpdateNotifier {
 		}).unref();
 	}
 
+  // 异步获取最新版本信息
 	async fetchInfo() {
 		const {distTag} = this.options;
 		const latest = await latestVersion()(this.packageName, {version: distTag});
