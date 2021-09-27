@@ -9,17 +9,17 @@ const updateNotifier = require('.');
 
 // 第一次之所以没有提示，是因为this.update = undefined
 
-process.env.NODE_ENV = "DEV";
+process.env.NODE_ENV = "DEV"; // 如果为test则不会提示
 
 const u = updateNotifier({
 	pkg: {
 		name: 'vue',
-		version: '0.1.1'
+		version: '0.2.1'
 	},
 	updateCheckInterval: 0 // 提示间隔为数字0，即始终提示（除了第一次）
 })
 
-u.notify();
+// u.notify();
 
 // u.fetchInfo().then(res => {
 //   console.log(res);

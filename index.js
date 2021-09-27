@@ -4,7 +4,7 @@ const path = require('path'); // 处理文件路径的包
 const { format } = require('util'); // 格式化字符串工具
 const importLazy = require('import-lazy')(require); // 懒加载模块
 
-const configstore = importLazy('configstore'); // 一个加载配置的工具，会在用户配置目录下生成对应的json文件
+const configstore = importLazy('configstore'); // 一个加载配置的工具，会在用户配置目录下生成对应的json文件，并保存在$XDG_CONFIG_HOME 或 ~/.config.目录下
 const chalk = importLazy('chalk'); // 控制台字体样式
 const semver = importLazy('semver'); // 语义化版本工具
 const semverDiff = importLazy('semver-diff'); // 版本比较工具
@@ -89,7 +89,9 @@ class UpdateNotifier {
 
     this.update = this.config.get('update');
 
-    console.log(111, this.config, this.update);
+    // 为什么第一次的时候不会有提示？
+    // 第一次运行时，这里的update为undefined
+    // 第一次运行时，用户配置目录下没有对应的json文件
 
     if (this.update) {
       // Use the real latest version instead of the cached one
@@ -107,10 +109,13 @@ class UpdateNotifier {
 
     // 翻译：开启子进程，并将options作为环境变量进行传递
     // Spawn a detached process, passing the options as an environment property
+    // 这里会去执行check.js，check.js会调用fetchInfo()方法，然后把返回的值赋给update对象，并保存到configstore里
+    // check.js里会new一个UpdateNotifier对象，用的options参数就是从这里传过去的，所以会保持一致
     spawn(process.execPath, [path.join(__dirname, 'check.js'), JSON.stringify(this.options)], {
       detached: true,
       stdio: 'ignore'
-    }).unref();
+    }).unref(); // 使用unref()，父进程不会等待子进程退出再退出
+    // 子进程会去更新configstore的update对象
   }
 
   // 异步获取最新版本信息
@@ -128,24 +133,10 @@ class UpdateNotifier {
 
   notify(options) {
     const suppressForNpm = !this.shouldNotifyInNpmScript && isNpm().isNpmOrYarn; // 如果使用的是npm或yarn，且配置了不允许通知，则不用继续往下了
-    if (!process.stdout.isTTY){
-      console.log(1)
-    }
-    if (suppressForNpm) {
-      console.log(2, this.shouldNotifyInNpmScript, isNpm().isNpmOrYarn)
-    }
-    if (!this.update) {
-      console.log(3, this.update)
-    } else if (!semver().gt(this.update.latest, this.update.current)) {
-      console.log(4)
-    }
-
-
+    // 第一次运行时，还没生成update，
     if (!process.stdout.isTTY || suppressForNpm || !this.update || !semver().gt(this.update.latest, this.update.current)) {
       return this;
     }
-
-    console.log(666)
 
     options = {
       isGlobal: isInstalledGlobally(),
