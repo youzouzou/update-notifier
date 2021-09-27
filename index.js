@@ -1,22 +1,22 @@
 'use strict';
-const {spawn} = require('child_process');
-const path = require('path');
-const {format} = require('util');
-const importLazy = require('import-lazy')(require);
+const { spawn } = require('child_process'); // child_process是node的核心模块，spawn可以开启一个子进程
+const path = require('path'); // 处理文件路径的包
+const { format } = require('util'); // 格式化字符串工具
+const importLazy = require('import-lazy')(require); // 懒加载模块
 
-const configstore = importLazy('configstore');
-const chalk = importLazy('chalk');
-const semver = importLazy('semver');
-const semverDiff = importLazy('semver-diff');
-const latestVersion = importLazy('latest-version');
-const isNpm = importLazy('is-npm');
-const isInstalledGlobally = importLazy('is-installed-globally');
-const isYarnGlobal = importLazy('is-yarn-global');
-const hasYarn = importLazy('has-yarn');
-const boxen = importLazy('boxen');
-const xdgBasedir = importLazy('xdg-basedir');
-const isCi = importLazy('is-ci');
-const pupa = importLazy('pupa');
+const configstore = importLazy('configstore'); // 一个加载配置的工具，无需考虑位置和方式
+const chalk = importLazy('chalk'); // 控制台字体样式
+const semver = importLazy('semver'); // 语义化版本工具
+const semverDiff = importLazy('semver-diff'); // 版本比较工具
+const latestVersion = importLazy('latest-version'); // 用于获取最新版本的 npm 包
+const isNpm = importLazy('is-npm'); // 检查是否是用npm或yarn安装工具
+const isInstalledGlobally = importLazy('is-installed-globally'); // 检查包是否是全局安装的
+const isYarnGlobal = importLazy('is-yarn-global'); // 检查包是否通过yarn全局安装
+const hasYarn = importLazy('has-yarn'); // 检查包是否通过yarn安装
+const boxen = importLazy('boxen'); // 在控制台打印出方框的工具
+const xdgBasedir = importLazy('xdg-basedir'); // linux平台下的,获取 XDG 基本目录路径的工具
+const isCi = importLazy('is-ci'); // 检测当前环境是否为 CI 服务器(持续集成服务器)
+const pupa = importLazy('pupa'); // 模板字符串工具
 
 const ONE_DAY = 1000 * 60 * 60 * 24;
 
@@ -44,6 +44,7 @@ class UpdateNotifier {
 			process.env.NODE_ENV === 'test' ||
 			process.argv.includes('--no-update-notifier') ||
 			isCi();
+    // shouldNotifyInNpmScript：允许在作为 npm 脚本运行时显示通知
 		this.shouldNotifyInNpmScript = options.shouldNotifyInNpmScript;
 
 		if (!this.disabled) {
@@ -114,7 +115,7 @@ class UpdateNotifier {
 	}
 
 	notify(options) {
-		const suppressForNpm = !this.shouldNotifyInNpmScript && isNpm().isNpmOrYarn;
+		const suppressForNpm = !this.shouldNotifyInNpmScript && isNpm().isNpmOrYarn; // 如果使用的是npm或yarn，且配置了不允许通知，则不用继续往下了
 		if (!process.stdout.isTTY || suppressForNpm || !this.update || !semver().gt(this.update.latest, this.update.current)) {
 			return this;
 		}
@@ -125,17 +126,18 @@ class UpdateNotifier {
 			...options
 		};
 
-		let installCommand;
-		if (options.isYarnGlobal) {
+		let installCommand; // 提示安装语句
+    if (options.isYarnGlobal) { // 如果这个包是用yarn全局安装的
 			installCommand = `yarn global add ${this.packageName}`;
-		} else if (options.isGlobal) {
+		} else if (options.isGlobal) { // 如果这个包是npm全局安装的
 			installCommand = `npm i -g ${this.packageName}`;
-		} else if (hasYarn()()) {
+		} else if (hasYarn()()) { // 如果不是全局安装的，而且配置了yarn
 			installCommand = `yarn add ${this.packageName}`;
-		} else {
+		} else { // 如果不是全局安装的，也没有yarn，那么就提示用npm
 			installCommand = `npm i ${this.packageName}`;
 		}
 
+    // 提示模板，提示从当前版本更新到最新模板
 		const defaultTemplate = 'Update available ' +
 			chalk().dim('{currentVersion}') +
 			chalk().reset(' → ') +
@@ -152,7 +154,9 @@ class UpdateNotifier {
 			borderStyle: 'round'
 		};
 
+    // 用方框把提示语句包起来
 		const message = boxen()(
+      // 用pupa填充模板语句里的内容， 包括包名，当前版本，最新版本，安装提示
 			pupa()(template, {
 				packageName: this.packageName,
 				currentVersion: this.update.current,
@@ -162,15 +166,15 @@ class UpdateNotifier {
 			options.boxenOptions
 		);
 
-		if (options.defer === false) {
+		if (options.defer === false) { // defer为true时等进程退出后再通知，false时则直接通知
 			console.error(message);
-		} else {
+		} else { // 等进程退出时再通知
 			process.on('exit', () => {
 				console.error(message);
 			});
 
-			process.on('SIGINT', () => {
-				console.error('');
+			process.on('SIGINT', () => { // 键盘中断事件，也会打印提示
+        console.error('');
 				process.exit();
 			});
 		}
