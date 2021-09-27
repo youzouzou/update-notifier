@@ -9,6 +9,8 @@ const updateNotifier = require('.');
 
 // 第一次之所以没有提示，是因为this.update = undefined
 
+// 实际上这里两次也不一定会有提示，因为子进程的回调结束时间不一定，手速快的话第二次也没有提示
+
 process.env.NODE_ENV = "DEV"; // 如果为test则不会提示
 
 const u = updateNotifier({
@@ -16,10 +18,10 @@ const u = updateNotifier({
 		name: 'vue',
 		version: '0.2.1'
 	},
-	updateCheckInterval: 0 // 提示间隔为数字0，即始终提示（除了第一次）
+	updateCheckInterval: -1
 })
 
-// u.notify();
+u.notify();
 
 // u.fetchInfo().then(res => {
 //   console.log(res);

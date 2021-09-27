@@ -4,7 +4,7 @@ const path = require('path'); // 处理文件路径的包
 const { format } = require('util'); // 格式化字符串工具
 const importLazy = require('import-lazy')(require); // 懒加载模块
 
-const configstore = importLazy('configstore'); // 一个加载配置的工具，会在用户配置目录下生成对应的json文件，并保存在$XDG_CONFIG_HOME 或 ~/.config.目录下
+const configstore = importLazy('configstore'); // 一个加载配置的工具，会在用户配置目录下生成对应的json文件，并保存在$XDG_CONFIG_HOME 或 ~/.config.目录下，如C:\\Users\\用户名\\.config\\configstore\\
 const chalk = importLazy('chalk'); // 控制台字体样式
 const semver = importLazy('semver'); // 语义化版本工具
 const semverDiff = importLazy('semver-diff'); // 版本比较工具
@@ -61,6 +61,7 @@ class UpdateNotifier {
           // 翻译：使用当前时间初始化，第一次的时候不会去做检查，以免打扰用户
           // Init with the current time so the first check is only
           // after the set interval, so not to bother users right away
+          // 实际上是根据时间间隔去判断
           lastUpdateCheck: Date.now()
         });
       } catch {
@@ -91,7 +92,6 @@ class UpdateNotifier {
 
     // 为什么第一次的时候不会有提示？
     // 第一次运行时，这里的update为undefined
-    // 第一次运行时，用户配置目录下没有对应的json文件
 
     if (this.update) {
       // Use the real latest version instead of the cached one
@@ -115,7 +115,7 @@ class UpdateNotifier {
       detached: true,
       stdio: 'ignore'
     }).unref(); // 使用unref()，父进程不会等待子进程退出再退出
-    // 子进程会去更新configstore的update对象
+    // 子进程会去异步更新configstore的update对象
   }
 
   // 异步获取最新版本信息
@@ -133,7 +133,8 @@ class UpdateNotifier {
 
   notify(options) {
     const suppressForNpm = !this.shouldNotifyInNpmScript && isNpm().isNpmOrYarn; // 如果使用的是npm或yarn，且配置了不允许通知，则不用继续往下了
-    // 第一次运行时，还没生成update，
+    // 第一次运行时，还没生成update，所以不会去更新，第二次的时候，configstore里已有update，所以在执行check的时候this.update就有值了
+    console.log(111, this.update)
     if (!process.stdout.isTTY || suppressForNpm || !this.update || !semver().gt(this.update.latest, this.update.current)) {
       return this;
     }
