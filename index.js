@@ -90,8 +90,15 @@ class UpdateNotifier {
 
     this.update = this.config.get('update');
 
-    // 为什么第一次的时候不会有提示？
-    // 第一次运行时，这里的update为undefined
+    // 如果this.update有值，则说明有更新版本
+    // 如果没有值，则不需要更新，也不会有提示
+
+    // 为什么example第一次运行时不会有提示？（实际上可能不止第一次）
+    // 刚开始运行时，这里的update为undefined
+    // 因为update是从configestore生成的本地json文件取出的
+    // 而json文件中的update是子进程异步更新的
+    // 刚开始运行时，update是没有数据的，所以值为undefined，更不会有更新提示
+    // 只有update有数据，才会去判断更新
 
     if (this.update) {
       // Use the real latest version instead of the cached one
@@ -133,8 +140,7 @@ class UpdateNotifier {
 
   notify(options) {
     const suppressForNpm = !this.shouldNotifyInNpmScript && isNpm().isNpmOrYarn; // 如果使用的是npm或yarn，且配置了不允许通知，则不用继续往下了
-    // 第一次运行时，还没生成update，所以不会去更新，第二次的时候，configstore里已有update，所以在执行check的时候this.update就有值了
-    console.log(111, this.update)
+    // 刚开始运行时，还没生成update，所以不会去更新，之后，当configstore里已有update，再执行check的时候this.update就有值了
     if (!process.stdout.isTTY || suppressForNpm || !this.update || !semver().gt(this.update.latest, this.update.current)) {
       return this;
     }
