@@ -139,7 +139,7 @@ class UpdateNotifier {
   }
 
   notify(options) {
-    const suppressForNpm = !this.shouldNotifyInNpmScript && isNpm().isNpmOrYarn; // 如果使用的是npm或yarn，且配置了不允许通知，则不用继续往下了
+    const suppressForNpm = !this.shouldNotifyInNpmScript && isNpm().isNpmOrYarn; // 如果notify是作为npm或yarn脚本命令运行，且配置了不允许通知，则不用继续往下了
     // 刚开始运行时，还没生成update，所以不会去更新，之后，当configstore里已有update，再执行check的时候this.update就有值了
     if (!process.stdout.isTTY || suppressForNpm || !this.update || !semver().gt(this.update.latest, this.update.current)) {
       return this;
